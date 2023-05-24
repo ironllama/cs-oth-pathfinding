@@ -1,0 +1,130 @@
+<div id="biggrid"></div>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .row {
+        display: flex;
+    }
+
+    .col {
+        border: 5px solid black;
+        width: 50px;
+        height: 50px;
+        background-color: cornflowerblue;
+    }
+
+</style>
+<script>
+    const allDirs = ["N", "S", "E", "W"];
+    const numCellsOnSide = 5;
+
+    const walkDelay = 100;
+
+    const stackOfVisited = [];
+
+    let giantHTML = "";
+    for (let i = 0; i < numCellsOnSide; i++) {
+        giantHTML += '<div class="row">'
+        for (let k = 0; k < numCellsOnSide; k++) {
+            giantHTML += `<div class="col" data-x=${k} data-y=${i}></div>`;
+        }
+        giantHTML += '</div>';
+    }
+
+    biggrid.innerHTML = giantHTML;
+
+    let curr = biggrid.children[0].children[0];
+    // stackOfVisited.push(curr);
+
+    // for(let i = 0; i < 10; i++) {
+    // let i = 0;
+
+    function go(backtracking = false) {
+        if (stackOfVisited.length === (numCellsOnSide * numCellsOnSide)) {
+            console.log("DONE!");
+        }
+        // console.log("GO!", curr.x, curr.y);
+        // i++;
+        // if (i > 10) return;
+
+        if (!backtracking) {
+            stackOfVisited.push(curr);
+            console.log("STACK:", stackOfVisited.length);
+        }
+        curr.style.backgroundColor = "lime";
+
+        const myAllDirs = [...allDirs];
+
+        let lookForNeighbor = true;
+        while(lookForNeighbor && myAllDirs.length > 0) {
+            const newDir = myAllDirs.splice(Math.floor(Math.random() * myAllDirs.length), 1)[0];
+            let newX = parseInt(curr.dataset.x);
+            let newY = parseInt(curr.dataset.y);
+            switch (newDir) {
+                case "N":
+                    newY -= 1;
+                    break;
+                case "S":
+                    newY += 1;
+                    break;
+                case "E":
+                    newX += 1;
+                    break;
+                case "W":
+                    newX -= 1;
+                    break;
+            }
+            if (newX >= 0 && newY >= 0
+                && newY < biggrid.children.length
+                && newX < biggrid.children[0].children.length) {
+                    // console.log("NEW:", newX, newY);
+                    const next = biggrid.children[newY].children[newX];
+                    if (!stackOfVisited.find(e => e === next)) {
+                        switch (newDir) {
+                            case "N":
+                                curr.style.borderTop = "none";
+                                next.style.borderBottom = "none";
+                                break;
+                            case "S":
+                                curr.style.borderBottom = "none";
+                                next.style.borderTop = "none";
+                                break;
+                            case "E":
+                                curr.style.borderRight = "none";
+                                next.style.borderLeft = "none";
+                                break;
+                            case "W":
+                                curr.style.borderLeft = "none";
+                                next.style.borderRight = "none";
+                                break;
+                        }
+                        curr = next;
+                        next.style.backgroundColor = "darkgreen";
+                        lookForNeighbor = false;
+
+                        // stackOfVisited.push(next);
+                        setTimeout(go, walkDelay);
+                    }
+            }
+        }
+
+        // Test if no free (deadend)
+        if (lookForNeighbor === true && myAllDirs.length === 0) {
+            curr = stackOfVisited.pop();
+            console.log("STACK SUB:", stackOfVisited.length);
+            console.log("DEADEND", curr);
+            if (curr) setTimeout(() => go(true), walkDelay);
+        }
+    }
+    go();
+
+</script>

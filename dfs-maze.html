@@ -2,14 +2,14 @@
 <script>
     const context = playarea.getContext("2d");
 
-    const cellSideSize = 8;
-    const playareaSideSizeInCells = 2;  // Num of cells.
+    const cellWallSize = 20;
+    const cellSideSize = cellWallSize * 4;
+
+    const playareaSideSizeInCells = 10;  // Num of cells.
     const playareaSideSize = cellSideSize * playareaSideSizeInCells;
 
-    const cellWallSize = 2;
-
-    const delayNewPath = 0;  // Millisecond delay per walking step.
-    const delayPathSteps = 0;  // Millisecond delay per walking step.
+    const delayNewPath = 100;  // Millisecond delay per walking step.
+    const delayPathSteps = 100;  // Millisecond delay per walking step.
 
     const colorNotPath = "cornflowerblue";
     const colorPath = "peachpuff";
