@@ -1,0 +1,231 @@
+<canvas id="playarea"></canvas>
+<script>
+    const context = playarea.getContext("2d");
+
+    const cellSideSize = 8;
+    const playareaSideSizeInCells = 20;  // Num of cells.
+    const playareaSideSize = cellSideSize * playareaSideSizeInCells;
+
+    const cellWallSize = 2;
+
+    const delayNewPath = 0;  // Millisecond delay per walking step.
+    const delayPathSteps = 0;  // Millisecond delay per walking step.
+
+    const colorNotPath = "cornflowerblue";
+    const colorPath = "peachpuff";
+    const colorWall = "black";
+
+    const colorWalkStart = "yellow";
+    const colorWalkNext = "green";
+    const colorWalkPath = "lime";
+
+    const allDirs = ["N", "S", "W", "E"];
+
+    playarea.width = playareaSideSize;
+    playarea.height = playareaSideSize;
+
+    class Cell {
+        constructor(col, row) {
+            this.x = col;
+            this.y = row;
+            this.inPath = false;
+            this.walls = [...allDirs];  // Make sure this is a copy! Removed: makes for crappy "rooms".
+            this.prevDir = "";
+            this.nextDir = "";
+            this.prev = null;  // To path back to walking start.
+        }
+
+        show() {
+            this.highlight(this.inPath ? colorPath : colorNotPath);
+        }
+
+        highlight(inColor) {
+            context.beginPath();
+            context.fillStyle = inColor;
+            // context.strokeStyle = "black";
+            // context.fillRect((this.x * cellSideSize) + cellWallSize, (this.y * cellSideSize) + cellWallSize, cellSideSize - (2 * cellWallSize), cellSideSize - (2 * cellWallSize));
+            context.rect((this.x * cellSideSize), (this.y * cellSideSize), cellSideSize, cellSideSize);
+            context.fill();
+            // context.stroke();
+            context.closePath();
+            this.drawBorders();
+        }
+
+        drawBorders() {
+            context.fillStyle = colorWall;
+
+            // Start with the whole cell...
+            let topLeftX = (this.x * cellSideSize);
+            let topLeftY = (this.y * cellSideSize);
+            let bottomWidth = cellSideSize;
+            let bottomHeight = cellSideSize;
+
+            // Corners!
+            context.fillRect(topLeftX, topLeftY, cellWallSize, cellWallSize);
+            context.fillRect(topLeftX + cellSideSize - cellWallSize, topLeftY, cellWallSize, cellWallSize);
+            context.fillRect(topLeftX + cellSideSize - cellWallSize, topLeftY + cellSideSize - cellWallSize, cellWallSize, cellWallSize);
+            context.fillRect(topLeftX, topLeftY + cellSideSize - cellWallSize, cellWallSize, cellWallSize);
+
+            this.walls.forEach(side => {
+                // Start with the whole cell...
+                let sideTopLeftX = topLeftX;
+                let sideTopLeftY = topLeftY;
+                let sideBottomWidth = bottomWidth;
+                let sideBottomHeight = bottomHeight;
+
+                // Then limit the borders.
+                switch (side) {
+                    case "S":
+                        sideTopLeftY = sideTopLeftY + cellSideSize - cellWallSize;  // Note NO break.
+                    case "N":
+                        sideBottomHeight = cellWallSize;
+                        break;
+                    case "E":
+                        sideTopLeftX = sideTopLeftX + cellSideSize - cellWallSize;  // Note NO break;
+                    case "W":
+                        sideBottomWidth = cellWallSize;
+                        break;
+                }
+                context.fillRect(sideTopLeftX, sideTopLeftY, sideBottomWidth, sideBottomHeight);
+            });
+        }
+    }
+
+    function getNextStartingCell() {
+        return allNotVisited[(Math.random() * allNotVisited.length) | 0];  // To use a random non-path'ed cell.
+        // return allNotVisited[0];  // To just use the next available cell. Ugly.
+    }
+
+    // Draw the playarea!
+    function drawPlayArea() {
+        playareaState.forEach(row => {
+            row.forEach(col => col.show());
+        });
+        // target.highlight("pink");
+        // target.drawBorders();
+    }
+
+    function generatePaths() {
+        drawPlayArea();
+
+        allNotVisited = allNotVisited.filter(c => !c.inPath);
+        allNotVisited.forEach(c => {
+            c.walls = [...allDirs];  // Reset all unused paths (loops).
+            c.prev = null;
+            c.prevDir = "";
+            c.nextDir = "";
+        });
+
+        if (allNotVisited.length === 0) {
+            drawPlayArea();
+            console.log("COMPLETE!");
+        }
+        else {
+
+            // New starting cell!
+            const curr = getNextStartingCell();
+            curr.prev = curr;  // To keep from going back too far on prev check.
+            curr.highlight(colorWalkStart);
+            setTimeout(() => findAnotherPath(curr, ""), delayNewPath);
+        }
+    }
+
+    function findAnotherPath(curr, dirFrom) {  // The dirFrom is to avoid pingponging.
+        if (dirFrom) curr.highlight(colorWalkPath);
+
+        // Start a walk with a random cell not already in a path.
+        let dirs = [...allDirs];
+        if (dirFrom) dirs = dirs.filter(d => d !== dirFrom);
+        if (curr.x === 0) dirs = dirs.filter(d => d !== "W");
+        if (curr.y === 0) dirs = dirs.filter(d => d !== "N");
+        if (curr.x === playareaSideSizeInCells - 1) dirs = dirs.filter(d => d !== "E");
+        if (curr.y === playareaSideSizeInCells - 1) dirs = dirs.filter(d => d !== "S");
+
+        const dirToGo = dirs.splice([(Math.random() * dirs.length) | 0], 1)[0];
+        let next = null;
+        switch (dirToGo) {
+            case "N":
+                next = playareaState[curr.y - 1][curr.x];
+                dirFrom = "S";
+                break;
+            case "S":
+                next = playareaState[curr.y + 1][curr.x];
+                dirFrom = "N";
+                break;
+            case "E":
+                next = playareaState[curr.y][curr.x + 1];
+                dirFrom = "W";
+                break;
+            case "W":
+                next = playareaState[curr.y][curr.x - 1];
+                dirFrom = "E";
+                break;
+        }
+        next.highlight(colorWalkNext);
+        curr.nextDir = dirToGo;
+
+        // console.log("PATH:", curr, next);
+        if (!next.inPath) {
+            if (next.prev == null) {
+                next.prev = curr;  // Link back to previous, all the way to the start of walk.
+                next.prevDir = dirFrom;
+            }
+            else {
+                // Did so many mental gymnastics to avoid backtracking, thinking I had something clever.
+                // In the end, edge cases made it even more difficult to avoid.
+                eraseLoop(curr, next);
+                curr = next;
+            }
+
+            setTimeout(() => findAnotherPath(next, dirFrom), delayPathSteps);
+        }
+        else {
+            // Make a path with prev. Should auto-eliminate loops.
+            next.walls = next.walls.filter(w => w !== dirFrom);
+
+            // console.log("RESOLVING");
+            while (curr && !curr.inPath) {
+                // console.log("NEW PATH:", curr);
+                curr.inPath = true;
+                curr.walls = curr.walls.filter(w => w !== curr.prevDir && w !== curr.nextDir);
+                curr = curr.prev;
+            }
+
+            generatePaths();
+        }
+    }
+
+    function eraseLoop(curr, next) {
+        next.nextDir = "";
+        while (curr.nextDir !== "") {
+            curr.prevDir = "";
+            curr.nextDir = "";
+            curr.highlight(colorNotPath);
+
+            const prev = curr.prev;
+            if (curr.prev !== curr) curr.prev = null;  // Don't change starting node.
+            curr = prev;
+        }
+    }
+
+
+    const playareaState = []
+    for (let row = 0; row < playareaSideSizeInCells; row++) {
+        const newRow = [];
+        playareaState.push(newRow);
+        for (let col = 0; col < playareaSideSizeInCells; col++) {
+            const newCell = new Cell(col, row);
+            newRow.push(newCell);
+        }
+    }
+    drawPlayArea();
+
+    // Seed the initial 'inPath' cell.
+    let allNotVisited = playareaState.flat().filter(c => !c.inPath);
+    const target = getNextStartingCell();
+    target.inPath = true;
+    allNotVisited = allNotVisited.filter(c => !c.inPath);
+
+    // Kick off!
+    generatePaths();
+</script>
