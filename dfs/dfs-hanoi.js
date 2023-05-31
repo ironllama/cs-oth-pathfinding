@@ -36,22 +36,25 @@ class TowerState {
 
 const discoveredStates = [];
 function isDiscovered(inState) {
-    for (const v of discoveredStates) {
+    let foundSame = false;
+    outerLoop:
+    for (let v of discoveredStates) {
         for (const [i, vp] of v.poles.entries()) {
-            console.log("A", i);
-            // for (const [k, vd] of vp) {
-            //     console.log(inState.poles, i, k);
-            //     if (vd !== inState.poles[i][k]) return false;
-            // }
+            for (const [k, vd] of vp.entries()) {
+                console.log(vd, inState.poles[i][k], i, k);
+                if (vd !== inState.poles[i][k]) continue outerLoop;
+            }
         }
-    }
-    return true;
+        return true;
+    };
+    return false;
 }
-
-discoveredStates.push(new TowerState([[2, 3], [1], [6, 4, 5]]));
-discoveredStates.push(new TowerState([[1, 3], [6], [2, 4, 5]]));
-discoveredStates.push(new TowerState([[5], [6, 1, 3], [2, 4]]));
-console.log(isDiscovered(new TowerState([[2, 3], [1], [6, 4, 5]])));
+// Tests.
+// discoveredStates.push(new TowerState([[2, 3], [1], [6, 4, 5]]));
+// discoveredStates.push(new TowerState([[1, 3], [6], [2, 4, 5]]));
+// discoveredStates.push(new TowerState([[5], [6, 1, 3], [2, 4]]));
+// console.log(isDiscovered(new TowerState([[2, 3], [1], [6, 4, 5]])));
+// console.log(isDiscovered(new TowerState([[5], [6, 1, 3], [2, 4]])));
 
 // function dfs_interative(firstState) {
 //     const pathStack = [];
