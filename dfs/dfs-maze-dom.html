@@ -1,0 +1,128 @@
+<div id="biggrid"></div>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    .row {
+        display: flex;
+    }
+
+    .col {
+        --border-width: 3px;
+        --cell-wh: calc(var(--border-width) * 4);
+        --cell-margin: calc(var(--border-width) * -1);
+        border: var(--border-width) solid black;
+        width: var(--cell-wh);
+        height: var(--cell-wh);
+        margin: var(--cell-margin) 0 0 var(--cell-margin);
+        /* background-color: cornflowerblue; */
+    }
+</style>
+<script>
+    const allDirs = ["N", "S", "E", "W"];
+    const numCellsOnSide = 20;
+    const walkDelay = 50;  // In milliseconds, to slow down path generation.
+
+    const colorNonVisited = "cornflowerblue";
+    const colorVisited = "lime";
+    const colorNextVisit = "darkgreen";
+
+    const stackOfWalkingPath = [];
+
+    // Generate the large puzzle grid with all the cells on all the walls.
+    // Need to have the background color set via style attribute, as we'll
+    // be using it later to determine if a cell is visited.
+    let giantHTML = "";
+    for (let i = 0; i < numCellsOnSide; i++) {
+        giantHTML += '<div class="row">'
+        for (let k = 0; k < numCellsOnSide; k++) {
+            giantHTML += `<div class="col" data-x=${k} data-y=${i} style="background-color: ${colorNonVisited};"></div>`;
+        }
+        giantHTML += '</div>';
+    }
+    biggrid.innerHTML = giantHTML;  // Stick the monster into the DOM!
+
+    let curr = biggrid.children[0].children[0];  // Start with the top left as the beginning.
+
+    function goDFS(backtracking = false) {
+        if (!backtracking) {
+            stackOfWalkingPath.push(curr);
+        }
+        curr.style.backgroundColor = colorVisited;  // Not only for making pretty, but color shows it has been visited.
+
+        const myAllDirs = [...allDirs];  // Make a copy, since we're going to use it to check neighbors in random order.
+        let lookForNeighbor = true;  // Did we exit the loop because we found a valid neighbor, or because we ran out of valid neighbors.
+        while (lookForNeighbor && myAllDirs.length > 0) {
+            const newDir = myAllDirs.splice(Math.floor(Math.random() * myAllDirs.length), 1)[0];  // Randomly pick a direction.
+            let newX = parseInt(curr.dataset.x);
+            let newY = parseInt(curr.dataset.y);
+            switch (newDir) {
+                case "N":
+                    newY -= 1;
+                    break;
+                case "S":
+                    newY += 1;
+                    break;
+                case "E":
+                    newX += 1;
+                    break;
+                case "W":
+                    newX -= 1;
+                    break;
+            }
+            if (newX >= 0 && newY >= 0  // Make sure we remain within the bounds of the puzzle area.
+                && newY < biggrid.children.length
+                && newX < biggrid.children[0].children.length) {
+                // console.log("NEW:", newX, newY);
+                const next = biggrid.children[newY].children[newX];
+                if (next.style.backgroundColor === colorNonVisited) {  // Check this cell hasn't been visited, yet.
+                    switch (newDir) {
+                        case "N":
+                            curr.style.borderTop = "none";
+                            next.style.borderBottom = "none";
+                            break;
+                        case "S":
+                            curr.style.borderBottom = "none";
+                            next.style.borderTop = "none";
+                            break;
+                        case "E":
+                            curr.style.borderRight = "none";
+                            next.style.borderLeft = "none";
+                            break;
+                        case "W":
+                            curr.style.borderLeft = "none";
+                            next.style.borderRight = "none";
+                            break;
+                    }
+                    curr = next;
+                    next.style.backgroundColor = colorNextVisit;
+                    lookForNeighbor = false;
+
+                    setTimeout(goDFS, walkDelay);
+                }
+            }
+        }
+
+        if (lookForNeighbor === true && myAllDirs.length === 0) {
+            if (stackOfWalkingPath.length === 0) {
+                console.log("DONE!");
+                return;
+            }
+
+            curr = stackOfWalkingPath.pop();
+            curr.style.backgroundColor = colorNextVisit;  // Mark the next cell
+            if (curr) setTimeout(() => goDFS(true), walkDelay);
+        }
+    }
+    goDFS();
+
+</script>

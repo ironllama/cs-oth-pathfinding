@@ -29,8 +29,8 @@
 </style>
 <script>
     const allDirs = ["N", "S", "E", "W"];
-    const numCellsOnSide = 20;
-    const walkDelay = 100;  // In milliseconds, to slow down path generation.
+    const numCellsOnSide = 100;
+    const walkDelay = 0;  // In milliseconds, to slow down path generation.
 
     const colorNonVisited = "cornflowerblue";
     const colorVisited = "lime";
@@ -53,10 +53,14 @@
 
     let curr = biggrid.children[0].children[0];  // Start with the top left as the beginning.
 
-    function goDFS(backtracking = false) {
+    let backtracking = false;
+    // function goDFS(backtracking = false) {
+    for (; ;) {
         if (!backtracking) {
             stackOfWalkingPath.push(curr);
         }
+        else backtracking = false;  // Reset this after skipping above.
+
         curr.style.backgroundColor = colorVisited;  // Not only for making pretty, but color shows it has been visited.
 
         const myAllDirs = [...allDirs];  // Make a copy, since we're going to use it to check neighbors in random order.
@@ -107,22 +111,24 @@
                     next.style.backgroundColor = colorNextVisit;
                     lookForNeighbor = false;
 
-                    setTimeout(goDFS, walkDelay);
+                    // setTimeout(goDFS, walkDelay);
                 }
             }
         }
 
         if (lookForNeighbor === true && myAllDirs.length === 0) {
-            if (stackOfWalkingPath.length === (numCellsOnSide * numCellsOnSide)) {
+            if (stackOfWalkingPath.length === 0) {
                 console.log("DONE!");
-                return;
+                // return;
+                break;
             }
 
             curr = stackOfWalkingPath.pop();
             curr.style.backgroundColor = colorNextVisit;  // Mark the next cell
-            if (curr) setTimeout(() => goDFS(true), walkDelay);
+            // if (curr) setTimeout(() => goDFS(true), walkDelay);
+            backtracking = true;
         }
     }
-    goDFS();
+    // goDFS();
 
 </script>

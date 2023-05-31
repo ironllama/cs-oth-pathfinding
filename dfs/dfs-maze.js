@@ -1,15 +1,13 @@
-const cellSideSize = 8;
-const playareaSideSizeInCells = 5;  // Num of cells.
+const cellWallSize = 3;
+const cellSideSize = cellWallSize * 4;
+
+const playareaSideSizeInCells = 20;  // Num of cells.
 const playareaSideSize = cellSideSize * playareaSideSizeInCells;
 
-const cellWallSize = 2;
-
-const delayNewPath = 0;  // Millisecond delay per walking step.
-const delayPathSteps = 0;  // Millisecond delay per walking step.
-
+const delayNewPath = 100;  // Millisecond delay per walking step.
+const delayPathSteps = 100;  // Millisecond delay per walking step.
 
 // const allDirs = ["N", "S", "W", "E"];
-// const allDirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];  // [X, Y]
 const allDirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];  // [X, Y]
 
 
@@ -37,7 +35,7 @@ for (let row = 0; row < playareaSideSizeInCells; row++) {
 curr = playareaState[0][0];
 
 // for (; ;) {  // For the non-recursive version. Can't really do timelapse with it.
-function nextPath() {  // Recursive version for timelapse.
+function goDFS() {  // Recursive version for timelapse.
     // console.log("NEW CURR:", curr);
     curr.visited = true;
 
@@ -64,7 +62,7 @@ function nextPath() {  // Recursive version for timelapse.
         newCell.walls = newCell.walls.filter(d => d.toString() !== oppositeNewDir.toString());  // Break down the wall.
 
         curr = newCell;
-        setTimeout(() => nextPath(), delayPathSteps);  // Comment out for non-recursive.
+        setTimeout(() => goDFS(), delayPathSteps);  // Comment out for non-recursive.
     }
     else {  // No mo' neighbors.
         if (curr.x === 0 && curr.y === 0) {
@@ -75,11 +73,11 @@ function nextPath() {  // Recursive version for timelapse.
         }
         else {
             curr = curr.prev;  // Back it up.
-            setTimeout(() => nextPath(), delayNewPath);  // Comment out for non-recursive.
+            setTimeout(() => goDFS(), delayNewPath);  // Comment out for non-recursive.
         }
     }
 }
-nextPath();
+goDFS();
 
 
 function generateTextMap() {
