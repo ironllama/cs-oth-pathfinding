@@ -55,18 +55,19 @@ stack.push(new PlayState(poles, 0)); // Starting state.
 let lowestNumMoves = Infinity;
 
 while (stack.length > 0) {
-    // DFS!
+    // BFS!
     if (++count % 100000 === 0) console.log("LOOP:", count, stack.length);
-    const curr = stack.pop();
+    // const curr = stack.pop();
+    const curr = stack.shift();
 
     if (
         // JSON.stringify(curr.poles) === endStr &&
         matrixIsEqual(curr.poles, end) &&
         curr.numMoves < lowestNumMoves
     ) {
-        console.log("FINISHED:", stack.length, curr.numMoves);
+        // console.log("FINISHED:", stack.length, curr.numMoves);
         lowestNumMoves = curr.numMoves;
-        // break;
+        break;
     }
 
     // if (discovered.includes(curr)) {  // Doesn't work because of array compare [] !== []

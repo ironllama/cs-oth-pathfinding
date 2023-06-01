@@ -1,6 +1,6 @@
 const biggrid = document.getElementById("biggrid");
 
-const animDelay = 100;
+const animDelay = 0;
 const sideSize = biggrid.children.length;
 
 const puzzleColor = "lime";
@@ -15,12 +15,16 @@ start.style.backgroundColor = "pink";
 end.style.backgroundColor = "yellow";
 
 const visited = [start];
-function goDFS(curr) {
+let allDone = false;
+function goBFS(curr) {
+    if (allDone) return;  // Early quit branches if the maze is solved.
+
     visited.push(curr); // Add to list of visited.
     curr.style.backgroundColor = pathColor; // Show where we are.
 
     if (curr === end) {
         console.log("FINISHED!");
+        allDone = true;
         return;
     }
 
@@ -55,21 +59,22 @@ function goDFS(curr) {
             // console.log("NEIGH:", newY, newX, neighbor);
             if (!visited.includes(neighbor)) {
                 foundNeighbor = true;
-                setTimeout(() => goDFS(neighbor), animDelay);
-                break;
+                setTimeout(() => goBFS(neighbor), animDelay);
+                // break;  // If commented out, all branches are explored and added to JS's event queue. Ghetto BFS!
             } else if (neighbor.style.backgroundColor === pathColor) {
                 from = neighbor;
             }
         }
     }
 
-    if (!foundNeighbor && from) {
-        // Probably a dead-end!
-        // console.log("DEADEND!");
-        curr.style.backgroundColor = puzzleColor;
-        curr = from;
-        setTimeout(() => goDFS(from), animDelay);
-    }
+    // No need to backtrack with BFS. A deadend is the end of the current branch.
+    // if (!foundNeighbor && from) {
+    //     // Probably a dead-end!
+    //     // console.log("DEADEND!");
+    //     curr.style.backgroundColor = puzzleColor;
+    //     curr = from;
+    //     setTimeout(() => goDFS(from), animDelay);
+    // }
     // });
 }
-goDFS(start);
+goBFS(start);
