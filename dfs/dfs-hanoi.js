@@ -13,7 +13,7 @@ const endStr = JSON.stringify(end);
 const stack = []; // Contains path and backtracking
 const discovered = [];
 
-function matrixIsEqual(a, b) {
+function matrixIsEqual(a, b) {  // ~25x faster than JSON stringify/decode. (2958s vs 112s)
     for (const [i, v1] of a.entries()) {
         for (const [k, v2] of v1.entries()) {
             if (v2 !== b[i][k]) return false;
@@ -26,7 +26,7 @@ function continueWith(newState) {
     if (discIdx !== -1 && newState.numMoves <= discovered[discIdx].numMoves) {
         // discovered.splice(discIdx, 1);
         // discovered.push(newState);
-        discovered[discIdx].numMoves = newState.numMoves;  // ~10% time improvement over splice/push.
+        discovered[discIdx].numMoves = newState.numMoves;  // ~10% time improvement over splice/push. (122s vs 112s)
         return true;
     }
     else if (discIdx === -1) {
