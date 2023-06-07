@@ -64,10 +64,12 @@ while (stack.length > 0) {
         matrixIsEqual(curr.poles, end) &&
         curr.numMoves < lowestNumMoves
     ) {
-        console.log("FINISHED:", stack.length, curr.numMoves);
+        // console.log("FOUND:", stack.length, curr.numMoves);
         lowestNumMoves = curr.numMoves;
         // break;
     }
+
+    if (curr.numMoves > lowestNumMoves) continue;  // ~30% faster when you don't pursue longer paths than min found so far. (40s vs 28s)
 
     // if (discovered.includes(curr)) {  // Doesn't work because of array compare [] !== []
     // if (!inDiscovered(curr)) {
@@ -75,11 +77,16 @@ while (stack.length > 0) {
     if (continueWith(curr)) {
         // Find "neighbors" or next game state we can go to.
         for (let [i, sourcePole] of curr.poles.entries()) {
+            // for (let i = curr.poles.length - 1; i >= 0; i--) {  // ~40% faster searching source poles only in reverse. (112s vs 70s)
+            //     const sourcePole = curr.poles[i];
             // For each pole.
             if (sourcePole.length > 0) {
                 // If there's something on the pole.
                 const topDisc = sourcePole.at(-1);
-                for (let [k, otherPole] of curr.poles.entries()) {
+                // for (let [k, otherPole] of curr.poles.entries()) {
+                for (let k = curr.poles.length - 1; k >= 0; k--) {  // ~66% faster searching only target poles in reverse. (112s vs 40s) Slower with both source and target in reverse. (112s vs 85s)
+                    const otherPole = curr.poles[k];
+
                     // Try moving it to other poles.
                     if (i === k) continue; // Don't check the same pole.
 
@@ -106,7 +113,7 @@ while (stack.length > 0) {
         }
     }
 }
-console.log("FINISHED:", stack.length, lowestNumMoves);
+console.log("FINISHED: LOOPS:", count, "STACK LEN:", stack.length, "ANS:", lowestNumMoves);
 
 
 // Previous version, with random poles

@@ -23,8 +23,9 @@ colorWalkStart = "yellow"
 colorWalkNext = "green"
 colorWalkPath = "lime green"
 
-    # const allDirs = ["N", "S", "W", "E"]
-allDirs = ((0, -1), (0, 1), (-1, 0), (1, 0))  # (X, Y)
+# const allDirs = ["N", "S", "W", "E"]
+# allDirs = ((0, -1), (0, 1), (-1, 0), (1, 0))  # (X, Y)
+allDirs = ((0, 1), (1, 0), (-1, 0), (0, -1))  # (X, Y)  in S, E, W, N order
 
 captionAreaHeight = 50
 
@@ -97,6 +98,7 @@ class Cell:
             canvas.create_rectangle(sideTopLeftX, sideTopLeftY, sideTopLeftX + sideBottomWidth, sideTopLeftY + sideBottomHeight, fill=colorWall, width=0)
 
 
+playareaState = []
 
 # Draw the playarea!
 def drawPlayArea():
@@ -104,7 +106,6 @@ def drawPlayArea():
         for col in row:
             col.show()
 
-playareaState = []
 for row in range(playareaSideSizeInCells):
     newRow = []
     playareaState.append(newRow)
@@ -131,7 +132,7 @@ def goDFSCreate(curr):
     newDir = ""
     potentialNeighbors = [list(a) for a in allDirs]
     while not newCell and len(potentialNeighbors) > 0:  # The ! here tests both newCell? and visited. Meh.
-        newDir = potentialNeighbors.pop(randrange(len(potentialNeighbors)))
+        newDir = potentialNeighbors.pop(randrange(len(potentialNeighbors)))  # Randomly choose one of the directions.
         newPos = tuple(map(sum, zip(curr.pos, newDir)))  # (a, b) + (x, y) = (a+x, b+y)
         if newPos[1] >= 0 and newPos[1] < len(playareaState) and newPos[0] >= 0 and newPos[0] < len(playareaState[0]):
             newCell = playareaState[newPos[1]][newPos[0]]
@@ -191,9 +192,10 @@ def goDFSSolve(curr):
     # Get neighbors.
     newCell = None
     newDir = ""
-    potentialNeighbors = [a for a in allDirs if list(a) not in curr.walls]
+    potentialNeighbors = [a for a in allDirs if list(a) not in curr.walls]  # Get directions that don't have a wall.
     while not newCell and len(potentialNeighbors) > 0:  # The ! here tests both newCell? and visited. Meh.
-        newDir = potentialNeighbors.pop(randrange(len(potentialNeighbors)))
+        # newDir = potentialNeighbors.pop(randrange(len(potentialNeighbors)))  # Randomly pick a direction.
+        newDir = potentialNeighbors.pop(0)  # Get from front of list.
         newPos = tuple(map(sum, zip(curr.pos, newDir)))  # (a, b) + (x, y) = (a+x, b+y)
         if newPos[1] >= 0 and newPos[1] < len(playareaState) and newPos[0] >= 0 and newPos[0] < len(playareaState[0]):
             newCell = playareaState[newPos[1]][newPos[0]]
@@ -244,7 +246,7 @@ def goDFSAltSolve(curr):
     if curr.pos == target.pos:
         print("DONE!")
 
-        # Rest colors.
+        # Reset colors.
         for row in playareaState:
             for col in row:
                 col.visited = True
@@ -263,7 +265,7 @@ def goDFSAltSolve(curr):
     # Get neighbors.
     newCell = None
     newDir = ""
-    potentialNeighbors = [a for a in allDirs if list(a) not in curr.walls]
+    potentialNeighbors = [a for a in allDirs if list(a) not in curr.walls]  # Get directions that don't have a wall.
 
     for newDir in potentialNeighbors:
     # while not newCell and len(potentialNeighbors) > 0:  # The ! here tests both newCell? and visited. Meh.
@@ -326,7 +328,7 @@ def goBFSSolve(curr):
         done = True
         print("DONE!")
 
-        # Rest colors.
+        # Reset colors.
         for row in playareaState:
             for col in row:
                 col.visited = True
@@ -345,7 +347,7 @@ def goBFSSolve(curr):
     # Get neighbors.
     newCell = None
     newDir = ""
-    potentialNeighbors = [a for a in allDirs if list(a) not in curr.walls]
+    potentialNeighbors = [a for a in allDirs if list(a) not in curr.walls]  # Get directions that don't have a wall.
 
     for newDir in potentialNeighbors:
         newPos = tuple(map(sum, zip(curr.pos, newDir)))  # (a, b) + (x, y) = (a+x, b+y)
