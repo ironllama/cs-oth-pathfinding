@@ -1,0 +1,320 @@
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        height: 100vh;
+        font-family: sans-serif;
+    }
+
+    #header {
+        font-weight: bold;
+        font-size: 1.25em;
+        height: 1.25em;
+        margin: 10px 0;
+    }
+
+    .row {
+        display: flex;
+    }
+
+    .col {
+        --cell-wh: 15px;
+        --border-wh: 1px;
+        border: var(--border-wh) solid black;
+        width: var(--cell-wh);
+        height: var(--cell-wh);
+        margin: calc(-1 * var(--border-wh)) 0 0 calc(-1 * var(--border-wh));
+        /* background-color: cornflowerblue; */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    button {
+        background-color: cornflowerblue;
+        border: none;
+        border-radius: 5px;
+        font-size: inherit;
+        font-weight: inherit;
+        color: white;
+        padding: 5px 10px;
+        margin: 10px;
+        min-width: 100px;
+    }
+</style>
+
+<body onmouseup="handleMouseUp()">
+    <div id="header"></div>
+    <div id="biggrid" onmousedown="handleMouseDown()"></div>
+    <div id="buttonsWrapper">
+        <button id="buttonBFS" onclick="doBFS()">BFS - Shortest</button>
+        <button id="buttonDFSSimple" onclick="doBFS(true)">DFS - Simple</button>
+        <button id="buttonDFS" onclick="doDFS()">DFS - Shortest</button>
+        <button id="buttonReset" onclick="resetAll()">Reset</button>
+    </div>
+</body>
+
+<script>
+    const numCols = 10;
+    const numRows = 5;
+
+    const animationDelay = 20;
+    const pathSymbol = "•";
+
+    const colorNewCell = "white";
+    const colorWallCell = "black";
+    const colorOldCell = "yellow";
+    const colorPathHeadCell = "blue";
+    const colorPathCell = "lightblue";
+    const colorBegCell = "green";
+    const colorEndCell = "red";
+
+    let gridState = 'start';
+    let cellBeg = null;
+    let cellEnd = null;
+
+    resetAll();
+
+
+    function doDFS() {
+        updateGridState('dfs');
+
+        resetShortest();
+        resetGrid();
+
+        const allDirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];  // N, E, S, W in [dx, dy]
+
+        // Neighbors are added in the order they appear in the allDirs, and added to the toDoList in the same order.
+        // For DFS, since it pops, it strips the last applied allDir before the first applied allDir. So, since we
+        // want to process the first allDir before the second allDir, we reverse for DFS.
+        allDirs.reverse();
+
+        let shortestPath = [];
+
+        // We've move the visited list into the state, since we'll need to see where we were at a point in the past
+        // when backtracking to a previous state.
+        const toDoList = [{ cell: cellBeg, visited: [cellBeg] }];
+        // while (toDoList.length > 0) {
+        function loop() {
+            if (toDoList.length === 0) {  // Short-circuit stop when all possibilities exhausted and everything visited.
+                resetGrid();
+                shortestPath.forEach(cell => { if (cell !== cellBeg && cell !== cellEnd) cell.style.backgroundColor = colorPathCell; });
+                console.log(`FINISHED! ${shortestPath.length} STEPS.`);
+                return;
+            }
+
+            currState = toDoList.pop();  // Get last item added toDoList.
+            const curr = currState.cell;
+            // console.log("CHECKING:", curr.dataset.x, curr.dataset.y, toDoList.length);
+
+            if (shortestPath.length !== 0 && currState.visited.length >= shortestPath.length) {  // Optimization to ignore obviously longer paths.
+                setTimeout(() => loop(), animationDelay);
+                return;
+            };
+
+            // Show where we are currently displaying. Because of the backtracking, we might be in the past. So, redraw complete state.
+            resetGrid();
+            currState.visited.forEach(cell => { if (cell !== cellBeg && cell !== cellEnd) cell.style.backgroundColor = colorOldCell; });
+
+            if (curr === cellEnd) {  // Handle the end case!
+                if (shortestPath.length === 0 || currState.visited.length < shortestPath.length) {
+                    shortestPath = currState.visited;
+
+                    // Remove previous shortest path color.
+                    [...biggrid.children].forEach(row => [...row.children].forEach(cell => cell.innerHTML = ""));
+
+                    // Add the current shortest path color.
+                    currState.visited.forEach(cell => cell.innerHTML = pathSymbol);
+                }
+
+                setTimeout(() => loop(), animationDelay);
+                return;
+            }
+
+            // Get neighbors and go to wherever is open.
+            let currX = parseInt(curr.dataset.x, 10);
+            let currY = parseInt(curr.dataset.y, 10);
+            for (let dir of allDirs) {
+                let newX = currX + dir[0];
+                let newY = currY + dir[1];
+
+                // Check to see if new coordinate is not off the grid.
+                if (newX >= 0 && newX < numCols && newY >= 0 && newY < numRows) {
+                    const neighbor = getCell(newX, newY);
+                    // Check for walls in the direction you want to try.
+                    if (neighbor.style.backgroundColor !== colorWallCell) {
+                        // Check to see if it's not a cell already visited.
+
+                        // if (!visited.includes(neighbor)) {
+                        if (!currState.visited.find(cell => cell === neighbor)) {
+                            // if (which === 'bfs') visited.push(neighbor);
+                            neighbor.dataset.prevX = currX;
+                            neighbor.dataset.prevY = currY;
+                            toDoList.push({ cell: neighbor, visited: [...currState.visited, neighbor] });
+                        }
+                    }
+                }
+            }
+
+            // Fake animation delay.
+            setTimeout(() => loop(), animationDelay);
+        }
+        loop();
+    }
+
+    function doBFS(simpleDFS = false) {
+        updateGridState('bfs');
+
+        resetShortest();
+        resetGrid();
+        let visited = [];
+
+        const allDirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];  // N, E, S, W in [dx, dy]
+        if (simpleDFS) allDirs.reverse();
+
+        const toDoList = [cellBeg];
+
+        // while (toDoList.length > 0) {
+        function loop() {
+            let curr = null;
+            if (simpleDFS) curr = toDoList.pop();  // DFS: Get lastest item added to toDoList.
+            else curr = toDoList.shift();  // BFS: Get earliest item added to toDoList.
+            // console.log("CHECKING:", curr.dataset.x, curr.dataset.y, toDoList.length);
+
+            visited.push(curr);  // Add to list of visited.
+            if (curr !== cellBeg && curr !== cellEnd) curr.style.backgroundColor = colorOldCell;  // Show where we are.
+
+            if (curr === cellEnd) {  // Handle the end case!
+                let numSteps = 0;
+                while (curr) {
+                    if (curr.style.backgroundColor === colorOldCell) curr.style.backgroundColor = colorPathCell;  // If not start or end = or part of a checked path.
+                    curr.innerHTML = pathSymbol;
+                    curr = (curr.dataset.prevX) ? getCell(curr.dataset.prevX, curr.dataset.prevY) : null;
+                    numSteps += 1;
+                    // console.log("PREV:", curr);
+                }
+
+                console.log(`FINISHED! ${numSteps} STEPS.`);
+                return;
+            }
+
+            // Get neighbors and go to wherever is open.
+            let currX = parseInt(curr.dataset.x, 10);
+            let currY = parseInt(curr.dataset.y, 10);
+            for (let dir of allDirs) {
+                let newX = currX + dir[0];
+                let newY = currY + dir[1];
+
+                // Check to see if new coordinate is not off the grid.
+                if (newX >= 0 && newX < numCols && newY >= 0 && newY < numRows) {
+                    const neighbor = getCell(newX, newY);
+                    // Check for walls in the direction you want to try.
+                    if (neighbor.style.backgroundColor !== colorWallCell) {
+                        // Check to see if it's not a cell already visited.
+
+                        // NOTE: For BFS, since we're adding all the neighbors of the next level before we go to them,
+                        // there is the chance that two cell of the current level will add the same neighbor to
+                        // the toDoList. This creates unnecessary processing, so we make sure we only add once.
+                        if (!visited.includes(neighbor) && !toDoList.includes(neighbor)) {
+                            // if (which === 'bfs') visited.push(neighbor);
+                            neighbor.dataset.prevX = currX;
+                            neighbor.dataset.prevY = currY;
+                            toDoList.push(neighbor);
+                        }
+                    }
+                }
+            }
+
+            // Fake animation delay.
+            setTimeout(() => loop(), animationDelay);
+        }
+        loop();
+    }
+
+
+    // Convenience function to get a cell from the grid with x, y coordinates.
+    function getCell(x, y) {
+        return biggrid.children[y].children[x];
+    }
+
+    function createGrid() {
+        let giantHTML = "";
+        for (let i = 0; i < numRows; i++) {
+            giantHTML += '<div class="row">'
+            for (let k = 0; k < numCols; k++) {
+                giantHTML += `<div class="col" data-x=${k} data-y=${i} style="background-color: ${colorNewCell};" onclick="handleCellClick(this)" onmouseover="handleCellMouseOver(this)"></div>`;
+            }
+            giantHTML += '</div>';
+        }
+        biggrid.innerHTML = giantHTML;  // Stick the monster into the DOM!
+    }
+
+    // Reset grid between pathfinding.
+    function resetGrid() {
+        // visited.forEach(cell => { if (cell !== cellBeg && cell !== cellEnd) cell.style.backgroundColor = colorNewCell });
+        for (let i = 0; i < numRows; i++) {
+            for (let k = 0; k < numCols; k++) {
+                const cell = getCell(k, i);
+                if (cell.style.backgroundColor === colorOldCell || cell.style.backgroundColor === colorPathCell) cell.style.backgroundColor = colorNewCell;
+            }
+        }
+        // Same as above.
+        // biggrid.children.forEach(row => row.forEach(cell => { if (cell.style.backgroundColor === colorOldCell) cell.style.backgroundColor = colorNewCell; }))
+    }
+
+    // Removes whatever content there was in the cells -- like the symbol used for the shortest path.
+    function resetShortest() {
+        [...biggrid.children].forEach(row => [...row.children].forEach(cell => cell.innerHTML = ""));
+    }
+
+    function updateGridState(newState) {
+        gridState = newState;
+
+        let newHeader = "";
+        if (gridState === 'start') newHeader = "Click on a starting cell!";
+        else if (gridState === 'findEnd') newHeader = "Ok! Now click on an ending cell!";
+        else if (gridState === 'makeWalls') newHeader = "Done! Now click on any number of cells to create obstructions!";
+        else if (gridState === 'dfs' || gridState === 'bfs') newHeader = gridState.toUpperCase();
+
+        if (newHeader) header.innerHTML = newHeader;
+    }
+
+    function resetAll() {
+        createGrid();
+        updateGridState('start');
+    }
+
+    function handleCellClick(cell) {
+        if (gridState === 'start') {
+            cellBeg = cell;
+            cell.style.backgroundColor = colorBegCell;
+            updateGridState('findEnd');
+        }
+        else if (gridState === 'findEnd') {
+            cellEnd = cell;
+            cell.style.backgroundColor = colorEndCell;
+            updateGridState('makeWalls');
+        }
+        else if (gridState === 'makeWalls') makeWall(cell);
+    }
+
+    let mousedown = false;
+    function handleMouseDown() { mousedown = true; }
+    function handleMouseUp() { mousedown = false; }
+    function handleCellMouseOver(cell) {
+        if (gridState === 'makeWalls' && mousedown) makeWall(cell);
+    }
+
+    function makeWall(cell) {
+        if (cell !== cellBeg && cell !== cellEnd) {
+            if (cell.style.backgroundColor === colorWallCell) cell.style.backgroundColor = colorNewCell;
+            else cell.style.backgroundColor = colorWallCell;
+        }
+    }
+</script>
