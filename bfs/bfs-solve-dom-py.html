@@ -875,9 +875,10 @@
 
 <py-config>
     [[fetch]]
-    files = ["./bfs_solve.py"]
+    files = ["./bfs-solve-dom.py"]
 </py-config>
 <py-script>
-    import bfs_solve
+    import importlib
+    importlib.import_module("bfs-solve-dom")
 </py-script>
 <script src="https://pyscript.net/latest/pyscript.js"></script>

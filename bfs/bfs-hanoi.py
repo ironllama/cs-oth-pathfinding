@@ -100,4 +100,4 @@ while (len(stack) > 0):
                         newState[k].append(topDisc);  # Put on target pole.
                         stack.append(PlayState(newState, curr.numMoves + 1)); # New play state to check.
 
-print("FINISHED: LOOPS:", count, "STACK LEN:", len(stack), "ANS:", lowestNumMoves);
+print("FINISHED: LOOPS:", count, "STACK LEN:", len(stack), "ANS:", lowestNumMoves)

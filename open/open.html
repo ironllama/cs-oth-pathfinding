@@ -61,8 +61,8 @@
 </body>
 
 <script>
-    const numCols = 10;
-    const numRows = 5;
+    const numCols = 15;
+    const numRows = 10;
 
     const animationDelay = 20;
     const pathSymbol = "•";
@@ -101,11 +101,17 @@
         // when backtracking to a previous state.
         const toDoList = [{ cell: cellBeg, visited: [cellBeg] }];
         // while (toDoList.length > 0) {
+        let loopCount = 0;
         function loop() {
+            loopCount += 1;
+
+            if (gridState !== 'dfs') return;  // Short-circuit stop if reset button is hit.
+
             if (toDoList.length === 0) {  // Short-circuit stop when all possibilities exhausted and everything visited.
                 resetGrid();
                 shortestPath.forEach(cell => { if (cell !== cellBeg && cell !== cellEnd) cell.style.backgroundColor = colorPathCell; });
-                console.log(`FINISHED! ${shortestPath.length} STEPS.`);
+                header.innerHTML += `: FINISHED! ${shortestPath.length} STEPS and ${loopCount} LOOPS.`;
+                gridState = 'makeWalls';
                 return;
             }
 
@@ -152,7 +158,7 @@
                         // Check to see if it's not a cell already visited.
 
                         // if (!visited.includes(neighbor)) {
-                        if (!currState.visited.find(cell => cell === neighbor)) {
+                        if (!currState.visited.includes(neighbor)) {
                             // if (which === 'bfs') visited.push(neighbor);
                             neighbor.dataset.prevX = currX;
                             neighbor.dataset.prevY = currY;
@@ -181,7 +187,18 @@
         const toDoList = [cellBeg];
 
         // while (toDoList.length > 0) {
+        let loopCount = 0;
         function loop() {
+            loopCount += 1;
+
+            if (gridState !== 'dfs') return;  // Short-circuit stop if reset button is hit.
+
+            if (toDoList.length === 0) {  // Short-circuit stop when all possibilities exhausted and everything visited.
+                header.innerHTML += `: FINISHED! NO SOLUTION and ${loopCount} LOOPS.`;
+                gridState = 'makeWalls';
+                return;
+            }
+
             let curr = null;
             if (simpleDFS) curr = toDoList.pop();  // DFS: Get lastest item added to toDoList.
             else curr = toDoList.shift();  // BFS: Get earliest item added to toDoList.
@@ -200,7 +217,8 @@
                     // console.log("PREV:", curr);
                 }
 
-                console.log(`FINISHED! ${numSteps} STEPS.`);
+                header.innerHTML += `: FINISHED! ${numSteps} STEPS and ${loopCount} LOOPS.`;
+                gridState = 'makeWalls';
                 return;
             }
 
