@@ -53,9 +53,9 @@
     <div id="header"></div>
     <div id="biggrid" onmousedown="handleMouseDown()"></div>
     <div id="buttonsWrapper">
-        <button id="buttonBFS" onclick="doBFS()">BFS - Shortest</button>
-        <button id="buttonDFSSimple" onclick="doBFS(true)">DFS - Simple</button>
-        <button id="buttonDFS" onclick="doDFS()">DFS - Shortest</button>
+        <button id="buttonBFS" onclick="doBFSorDFS()">BFS - Shortest</button>
+        <button id="buttonDFSSimple" onclick="doBFSorDFS(true)">DFS - Simple</button>
+        <button id="buttonDFS" onclick="doDFSShortest()">DFS - Shortest</button>
         <button id="buttonReset" onclick="resetAll()">Reset</button>
     </div>
 </body>
@@ -82,7 +82,7 @@
     resetAll();
 
 
-    function doDFS() {
+    function doDFSShortest() {
         updateGridState('dfs');
 
         resetShortest();
@@ -174,8 +174,9 @@
         loop();
     }
 
-    function doBFS(simpleDFS = false) {
-        updateGridState('bfs');
+    function doBFSorDFS(simpleDFS = false) {
+        if (simpleDFS) updateGridState('dfs');
+        else updateGridState('bfs');
 
         resetShortest();
         resetGrid();
