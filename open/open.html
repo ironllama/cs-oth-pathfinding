@@ -84,7 +84,7 @@
 
 
     function doDFSShortest(optimize = false) {
-        updateGridState('dfs');
+        updateGridState('dfs' + (optimize ? ' optimized' : 'shortest'));
 
         resetShortest();
         resetGrid();
@@ -111,7 +111,7 @@
         function loop() {
             loopCount += 1;
 
-            if (gridState !== 'dfs') return;  // Short-circuit stop if reset button is hit.
+            if (gridState !== 'dfs' + (optimize ? ' optimized' : 'shortest')) return;  // Short-circuit stop if reset button is hit.
 
             if (toDoList.length === 0) {  // Short-circuit stop when all possibilities exhausted and everything visited.
                 resetGrid();
@@ -196,7 +196,7 @@
     }
 
     function doBFSorDFS(simpleDFS = false) {
-        if (simpleDFS) updateGridState('dfs');
+        if (simpleDFS) updateGridState('dfs simple');
         else updateGridState('bfs');
 
         resetShortest();
@@ -213,7 +213,7 @@
         function loop() {
             loopCount += 1;
 
-            if (gridState !== 'bfs' && gridState !== 'dfs') return;  // Short-circuit stop if reset button is hit.
+            if (gridState !== (simpleDFS ? 'dfs simple' : 'bfs')) return;  // Short-circuit stop if reset button is hit.
 
             if (toDoList.length === 0) {  // Short-circuit stop when all possibilities exhausted and everything visited.
                 header.innerHTML += `: FINISHED! NO SOLUTION and ${loopCount} LOOPS.`;
@@ -327,7 +327,7 @@
         if (gridState === 'start') newHeader = "Click on a starting cell!";
         else if (gridState === 'findEnd') newHeader = "Ok! Now click on an ending cell!";
         else if (gridState === 'makeWalls') newHeader = "Done! Now click on any number of cells to create obstructions!";
-        else if (gridState === 'dfs' || gridState === 'bfs') newHeader = gridState.toUpperCase();
+        else if (gridState.includes('dfs') || gridState.includes('bfs')) newHeader = gridState.toUpperCase();
 
         if (newHeader) header.innerHTML = newHeader;
     }
