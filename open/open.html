@@ -55,7 +55,8 @@
     <div id="buttonsWrapper">
         <button id="buttonBFS" onclick="doBFSorDFS()">BFS - Shortest</button>
         <button id="buttonDFSSimple" onclick="doBFSorDFS(true)">DFS - Simple</button>
-        <button id="buttonDFS" onclick="doDFSShortest()">DFS - Shortest</button>
+        <button id="buttonDFSShortest" onclick="doDFSShortest()">DFS - Shortest</button>
+        <button id="buttonDFSOptimized" onclick="doDFSShortest(true)">DFS - Optimized</button>
         <button id="buttonReset" onclick="resetAll()">Reset</button>
     </div>
 </body>
@@ -82,7 +83,7 @@
     resetAll();
 
 
-    function doDFSShortest() {
+    function doDFSShortest(optimize = false) {
         updateGridState('dfs');
 
         resetShortest();
@@ -96,6 +97,11 @@
         allDirs.reverse();
 
         let shortestPath = [];
+
+        // We want to track the shortest distance from start (cellBeg) to current point so that we can later eliminate
+        // paths that are too long. Instead of setting to Infinity (which will be NaN on parseInt for datasets), set
+        // to longest possible distance.
+        if (optimize) [...biggrid.children].forEach(row => [...row.children].forEach(cell => cell.dataset.shortestDistance = (numRows * numCols)));
 
         // We've move the visited list into the state, since we'll need to see where we were at a point in the past
         // when backtracking to a previous state.
@@ -119,16 +125,19 @@
             const curr = currState.cell;
             // console.log("CHECKING:", curr.dataset.x, curr.dataset.y, toDoList.length);
 
-            if (shortestPath.length !== 0 && currState.visited.length >= shortestPath.length) {  // Optimization to ignore obviously longer paths.
-                setTimeout(() => loop(), animationDelay);
-                return;
-            };
+            // Seems like this doesn't make a difference, since we've already checked before adding to toDoList.
+            // if (optimize) {
+            //     if (shortestPath.length > 0 && currState.visited.length >= shortestPath.length) {  // Optimization to ignore obviously longer paths.
+            //         setTimeout(() => loop(), animationDelay);
+            //         return;
+            //     };
+            // }
 
             // Show where we are currently displaying. Because of the backtracking, we might be in the past. So, redraw complete state.
             resetGrid();
             currState.visited.forEach(cell => { if (cell !== cellBeg && cell !== cellEnd) cell.style.backgroundColor = colorOldCell; });
 
-            if (curr === cellEnd) {  // Handle the end case!
+            if (curr === cellEnd) {  // Handle an end case!
                 if (shortestPath.length === 0 || currState.visited.length < shortestPath.length) {
                     shortestPath = currState.visited;
 
@@ -156,10 +165,22 @@
                     // Check for walls in the direction you want to try.
                     if (neighbor.style.backgroundColor !== colorWallCell) {
                         // Check to see if it's not a cell already visited.
-
-                        // if (!visited.includes(neighbor)) {
                         if (!currState.visited.includes(neighbor)) {
-                            // if (which === 'bfs') visited.push(neighbor);
+
+                            if (optimize && shortestPath.length > 0) {
+                                // Given we already have determined where the end is, skip any neighbors that will take a
+                                // path that will be too far to consider, even if optimal -- typically away from target.
+                                neighborDistance = distance(neighbor, cellEnd);
+                                shortestRemaing = shortestPath.length - currState.visited.length;
+                                if (neighborDistance > shortestRemaing) continue;
+
+                                // Check to see if the current neighbor path option is shorter than any that have already
+                                // been checked in the past. Only add neighbor if this is a shorter option than seen before.
+                                if (currState.visited.length + 1 < neighbor.dataset.shortestDistance)
+                                    neighbor.dataset.shortestDistance = currState.visited.length + 1;
+                                else continue;
+                            }
+
                             neighbor.dataset.prevX = currX;
                             neighbor.dataset.prevY = currY;
                             toDoList.push({ cell: neighbor, visited: [...currState.visited, neighbor] });
@@ -192,7 +213,7 @@
         function loop() {
             loopCount += 1;
 
-            if (gridState !== 'dfs') return;  // Short-circuit stop if reset button is hit.
+            if (gridState !== 'bfs' && gridState !== 'dfs') return;  // Short-circuit stop if reset button is hit.
 
             if (toDoList.length === 0) {  // Short-circuit stop when all possibilities exhausted and everything visited.
                 header.innerHTML += `: FINISHED! NO SOLUTION and ${loopCount} LOOPS.`;
@@ -262,6 +283,12 @@
         return biggrid.children[y].children[x];
     }
 
+    // Convenience function to get Manhattan distance between two cells.
+    function distance(a, b) {
+        return Math.abs(a.dataset.x - b.dataset.x) + Math.abs(a.dataset.y - b.dataset.y);
+    }
+
+    // (Re)create the grid completely from scratch.
     function createGrid() {
         let giantHTML = "";
         for (let i = 0; i < numRows; i++) {
@@ -274,7 +301,7 @@
         biggrid.innerHTML = giantHTML;  // Stick the monster into the DOM!
     }
 
-    // Reset grid between pathfinding.
+    // Reset grid between pathfinding. Essentially only changes the colors back.
     function resetGrid() {
         // visited.forEach(cell => { if (cell !== cellBeg && cell !== cellEnd) cell.style.backgroundColor = colorNewCell });
         for (let i = 0; i < numRows; i++) {
@@ -292,6 +319,7 @@
         [...biggrid.children].forEach(row => [...row.children].forEach(cell => cell.innerHTML = ""));
     }
 
+    // Update the header text, per game state.
     function updateGridState(newState) {
         gridState = newState;
 
@@ -304,11 +332,14 @@
         if (newHeader) header.innerHTML = newHeader;
     }
 
+    // Convenience function for the beginning of the UI and when user hits Reset button.
     function resetAll() {
         createGrid();
         updateGridState('start');
     }
 
+    // Event handlers!
+    // ========================================================================
     function handleCellClick(cell) {
         if (gridState === 'start') {
             cellBeg = cell;
