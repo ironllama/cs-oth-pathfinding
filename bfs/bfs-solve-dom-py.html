@@ -5,6 +5,7 @@
 
     body {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
@@ -25,6 +26,11 @@
         /* background-color: cornflowerblue; */
     }
 
+    #pythonStuff {
+        height: 100px;
+        margin-top: 15px;
+    }
+
     /* py-config - not a component */
     py-config {
         display: none;
@@ -33,38 +39,6 @@
     /* py-{el} - components not defined */
     py-script:not(:defined) {
         display: none;
-    }
-
-    .bg-lime {
-        background-color: lime !important;
-    }
-
-    .bg-darkgreen {
-        background-color: darkgreen !important;
-    }
-
-    .bg-pink {
-        background-color: pink !important;
-    }
-
-    .bg-yellow {
-        background-color: yellow !important;
-    }
-
-    .no-border-bottom {
-        border-bottom: none;
-    }
-
-    .no-border-top {
-        border-top: none;
-    }
-
-    .no-border-left {
-        border-left: none;
-    }
-
-    .no-border-right {
-        border-right: none;
     }
 </style>
 
@@ -868,17 +842,18 @@
         </div>
     </div>
 </div>
-<!-- <script src="bfs-solve-dom.js"></script> -->
 
-<!-- 2023-06-05: DEADEND. -->
-<!-- This isn't going to go anywhere. PyScript has, so far, no way of getting CSS styles or classes currently applied. -->
-
-<py-config>
-    [[fetch]]
-    files = ["./bfs-solve-dom.py"]
-</py-config>
-<py-script>
-    import importlib
-    importlib.import_module("bfs-solve-dom")
-</py-script>
+<div id="pythonStuff">
+    <div id="pythonOutput"></div>
+    <py-config>
+        [[fetch]]
+        files = ["./bfs-solve-dom.py"]
+    </py-config>
+    <py-script>
+        import importlib
+        importlib.import_module("bfs-solve-dom")
+    </py-script>
+    <py-splashscreen></py-splashscreen>
+    <py-terminal></py-terminal>
+</div>
 <script src="https://pyscript.net/latest/pyscript.js"></script>

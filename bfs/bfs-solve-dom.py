@@ -1,78 +1,102 @@
-print("What is going on?")
+from pyscript import Element, display
+import js
 
-from pyscript import Element
+import asyncio
+
+# Configure!
+animDelay = 20  # in ms
+startColor = "pink"
+endColor = "yellow"
+puzzleColor = "lime"
+pathColor = "darkgreen"
+
+# The py-splashscreen doesn't seem to autoclose when explicitly added to the DOM.
+# But it is useful to explicitly add py-splashscreen to the DOM to prevent layout jitters.
+js.document.querySelector("py-splashscreen").style.display = "none"
 
 biggrid = Element('biggrid')
 # print("BIGGRID:", biggrid.select("div"))
 
-animDelay = 0
-# sideSize = biggrid.children.length
-sideSize = 20
+rows = js.document.querySelectorAll(".row")
+sideSize = len(rows)
+# sideSize = 20
 
-puzzleColor = "lime"
-pathColor = "darkgreen"
+# start = biggrid.select("div[data-x='0'][data-y='0']")
+start = js.document.querySelector("div[data-x='0'][data-y='0']")
+start.style.backgroundColor = startColor
 
-allDirs = ["S", "E", "W", "N"]
-# # gallDirs = ["N", "E", "S", "W"];
+# end = biggrid.select(f"div[data-x='{sideSize - 1}'][data-y='{sideSize - 1}']")
+end = js.document.querySelector(f"div[data-x='{sideSize - 1}'][data-y='{sideSize - 1}']")
+end.style.backgroundColor = endColor
 
-start = biggrid.select("div[data-x='0'][data-y='0']")
-end = biggrid.select(f"div[data-x='{sideSize - 1}'][data-y='{sideSize - 1}']")
-start.add_class("bg-pink")
-end.add_class("bg-yellow")
+allDirs = [[0, -1], [1, 0], [0, 1], [-1, 0]]  # N, E, S, W in [dx, dy]
+visit = [start]
 
-print(start.innerHtml)
+# while(len(visit) > 0):  # PyScript doesn't refresh screen after each DOM update. So, we need to async it.
+finished = False  # Short circuit return for async loop calls that process after end is found.
+count = 0  # Get an idea of how many times the loop is run, looking for the end.
+async def loop():
+    global finished, count
 
-# 2023-05-06: DEADEND.
-# This isn't going to go anywhere. PyScript has, so far, no way of getting CSS styles or classes currently applied.
+    if finished: return
 
+    count += 1
+    display("LOOP: " + str(count), target="pythonOutput", append=False)
 
+    curr = visit.pop(0)
+    # print("CURR:", curr.dataset.x, curr.dataset.y, curr)
 
-# visited = [start]
-# allDone = False
-# def goBFS(curr):
-#     if (allDone): return  # Early quit branches if the maze is solved.
+    if curr == end:
+        display("FINISHED! " + str(count) + " LOOPS.", target="pythonOutput", append=False)
+        finished = True
+        for e in js.document.querySelectorAll(".col"):
+            if e != end and e != start:
+                e.style.backgroundColor = puzzleColor
 
-#     visited.append(curr)  # Add to list of visited.
-#     curr.add_class(pathColor)  # Show where we are.
+        while hasattr(curr.dataset, 'prevX') and curr != start:
+            if curr != end and curr != start:
+                curr.style.backgroundColor = pathColor
+            curr = js.document.querySelector(f"div[data-x='{curr.dataset.prevX}'][data-y='{curr.dataset.prevY}']")
+            # print("PREV:", curr.dataset.x, curr.dataset.y)
+        # break
+        return
 
-#     if curr == end:
-#         print("FINISHED!")
-#         allDone = true
-#         return
+    if curr != start:
+        curr.style.backgroundColor = pathColor
 
-#     # Get neighbors and go to wherever is open.
-#     # allDirs.forEach((dir) => {
-#     foundNeighbor = False
-#     fromCell = None
-#     # console.log("CHECKING:", curr);
-#     for dir in allDirs:
-#         newY = curr.y
-#         newX = curr.x
+    # Get neighbors and go to wherever is open.
+    currX = int(curr.dataset.x)
+    currY = int(curr.dataset.y)
+    for dir in allDirs:
+        newX = currX + dir[0]
+        newY = currY + dir[1]
 
-#         match dir:
-#             case "S":
-#                 if (curr.style.borderBottom === "none") newY += 1;
-#             case "E":
-#                 if (curr.style.borderRight === "none") newX += 1;
-#             case "W":
-#                 if (curr.style.borderLeft === "none") newX -= 1;
-#             case _:
-#                 if (curr.style.borderTop === "none") newY -= 1;
-#         }
+        # First check if new coords are within the maze area.
+        if newX >= 0 and newX < sideSize and newY >= 0 and newY < sideSize:
+            # Then check to see if it's a valid direction
+            # print("WALLS: N: ", curr.style.borderTop, " E: ", curr.style.borderRight, " S: ", curr.style.borderBottom, " W: ", curr.style.borderLeft)
+            if dir[1] != 0:
+                if dir[1] == -1:
+                    if curr.style.borderTop != "none": continue
+                else:
+                    if curr.style.borderBottom != "none": continue
+            else:
+                if dir[0] == -1:
+                    if curr.style.borderLeft != "none": continue
+                else:
+                    if curr.style.borderRight != "none": continue
 
-# #         # console.log("Trying to go:", curr.dataset.x, newX, curr.dataset.y, newY);
-# #         # If there is a possibility to move, then go.
-# #         if (newX != curr.dataset.x || newY != curr.dataset.y) {
-# #             const neighbor = biggrid.children[newY].children[newX];
-# #             # console.log("NEIGH:", newY, newX, neighbor);
-# #             if (!visited.includes(neighbor)) {
-# #                 foundNeighbor = true;
-# #                 setTimeout(() => goBFS(neighbor), animDelay);
-# #                 # break;  # If commented out, all branches are explored and added to JS's event queue. Ghetto BFS!
-# #             } else if (neighbor.style.backgroundColor === pathColor) {
-# #                 from = neighbor;
-# #             }
-# #         }
-# #     }
+            # const neighbor = biggrid.children[newY].children[newX];
+            neighbor = js.document.querySelector(f"div[data-x='{newX}'][data-y='{newY}']")
+            # print("NEIGH:", newX, newY, neighbor)
+            if not neighbor.style.backgroundColor == pathColor and not neighbor in visit:
+                neighbor.dataset.prevX = currX
+                neighbor.dataset.prevY = currY
+                visit.append(neighbor)
 
-# goBFS(start)
+    # time.sleep(animDelay / 1000)
+    await asyncio.sleep(animDelay / 1000)
+    await loop()
+
+display("STARTING...", target="pythonOutput", append=False)
+asyncio.ensure_future(loop())
